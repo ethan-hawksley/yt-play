@@ -65,14 +65,6 @@ fn get_playlist_directory(playlist_id: &str) -> Result<PathBuf, Box<dyn Error>> 
 
     let playlist_directory = proj_dirs.cache_dir().join(playlist_id);
 
-    fs::create_dir_all(&playlist_directory).map_err(|e| {
-        format!(
-            "Failed to create cache directory at {}: {}",
-            playlist_directory.display(),
-            e
-        )
-    })?;
-
     Ok(playlist_directory)
 }
 
@@ -145,9 +137,10 @@ fn download_songs(songs: &[Song], playlist_directory: &PathBuf) -> Result<(), Bo
         }
     }
 
-    let missing_ids: Vec<&String> = valid_ids
-        .difference(&found_ids.iter().collect())
-        .copied()
+    let missing_ids: Vec<&String> = songs
+        .iter()
+        .filter(|s| !found_ids.contains(&s.id))
+        .map(|s| &s.id)
         .collect();
 
     if missing_ids.is_empty() {
@@ -182,6 +175,21 @@ fn download_songs(songs: &[Song], playlist_directory: &PathBuf) -> Result<(), Bo
             "yt-dlp failed to download some files".into(),
         )));
     }
+
+    Ok(())
+}
+
+fn update_playlist(
+    playlist_id: &str,
+    playlist_directory: &PathBuf,
+    verbose: bool,
+) -> Result<(), Box<dyn Error>> {
+    let playlist_data = fetch_playlist_data(playlist_id)?;
+    if verbose {
+        println!("Fetched Playlist Data: {playlist_data:?}");
+    }
+
+    download_songs(&playlist_data.entries, playlist_directory)?;
 
     Ok(())
 }
@@ -222,13 +230,17 @@ fn run() -> Result<(), Box<dyn Error>> {
         println!("Using Cache Directory: {}", playlist_directory.display());
     }
 
-    if cli.refresh {
-        let playlist_data = fetch_playlist_data(&id)?;
-        if cli.verbose {
-            println!("Fetched Playlist Data: {playlist_data:?}");
-        }
-
-        download_songs(&playlist_data.entries, &playlist_directory)?;
+    if !fs::exists(&playlist_directory)? {
+        fs::create_dir_all(&playlist_directory).map_err(|e| {
+            format!(
+                "Failed to create cache directory at {}: {}",
+                playlist_directory.display(),
+                e
+            )
+        })?;
+        update_playlist(&id, &playlist_directory, cli.verbose)?;
+    } else if cli.refresh {
+        update_playlist(&id, &playlist_directory, cli.verbose)?;
     }
 
     play_songs(
