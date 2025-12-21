@@ -28,6 +28,10 @@ struct Cli {
     #[arg(short, long)]
     shuffle: bool,
 
+    /// Custom yt-dlp arguments
+    #[arg(long)]
+    yt_dlp_arguments: Option<String>,
+
     /// Custom mpv arguments
     #[arg(long)]
     mpv_arguments: Option<String>,
@@ -110,7 +114,11 @@ fn list_files_in_directory(directory: &PathBuf) -> Result<Vec<PathBuf>, Box<dyn 
     Ok(files)
 }
 
-fn download_songs(songs: &[Song], playlist_directory: &PathBuf) -> Result<(), Box<dyn Error>> {
+fn download_songs(
+    songs: &[Song],
+    playlist_directory: &PathBuf,
+    yt_dlp_arguments: &str,
+) -> Result<(), Box<dyn Error>> {
     let valid_ids: HashSet<&String> = songs.iter().map(|s| &s.id).collect();
     let mut found_ids: HashSet<String> = HashSet::new();
 
@@ -160,6 +168,10 @@ fn download_songs(songs: &[Song], playlist_directory: &PathBuf) -> Result<(), Bo
         .arg("-x")
         .stdin(std::process::Stdio::piped());
 
+    if !yt_dlp_arguments.is_empty() {
+        yt_dlp.args(yt_dlp_arguments.split_whitespace());
+    }
+
     let mut child = yt_dlp.spawn()?;
 
     if let Some(mut stdin) = child.stdin.take() {
@@ -182,6 +194,7 @@ fn download_songs(songs: &[Song], playlist_directory: &PathBuf) -> Result<(), Bo
 fn update_playlist(
     playlist_id: &str,
     playlist_directory: &PathBuf,
+    yt_dlp_arguments: &str,
     verbose: bool,
 ) -> Result<(), Box<dyn Error>> {
     let playlist_data = fetch_playlist_data(playlist_id)?;
@@ -189,7 +202,7 @@ fn update_playlist(
         println!("Fetched Playlist Data: {playlist_data:?}");
     }
 
-    download_songs(&playlist_data.entries, playlist_directory)?;
+    download_songs(&playlist_data.entries, playlist_directory, yt_dlp_arguments)?;
 
     Ok(())
 }
@@ -238,9 +251,19 @@ fn run() -> Result<(), Box<dyn Error>> {
                 e
             )
         })?;
-        update_playlist(&id, &playlist_directory, cli.verbose)?;
+        update_playlist(
+            &id,
+            &playlist_directory,
+            &cli.yt_dlp_arguments.unwrap_or(String::new()),
+            cli.verbose,
+        )?;
     } else if cli.refresh {
-        update_playlist(&id, &playlist_directory, cli.verbose)?;
+        update_playlist(
+            &id,
+            &playlist_directory,
+            &cli.yt_dlp_arguments.unwrap_or(String::new()),
+            cli.verbose,
+        )?;
     }
 
     play_songs(
