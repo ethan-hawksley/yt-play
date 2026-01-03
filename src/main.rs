@@ -67,7 +67,7 @@ fn get_playlist_directory(playlist_id: &str) -> Result<PathBuf, Box<dyn Error>> 
         io::Error::new(io::ErrorKind::NotFound, "Home directory could not be found")
     })?;
 
-    let playlist_directory = proj_dirs.cache_dir().join(playlist_id);
+    let playlist_directory = proj_dirs.data_dir().join(playlist_id);
 
     Ok(playlist_directory)
 }
