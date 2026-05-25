@@ -39,3 +39,7 @@ yt-play --version
 ```
 
 If the program could not be found, ensure that Cargo's `bin` directory is added to your PATH.
+
+## Author
+
+[Ethan Hawksley](https://hawksley.dev)
