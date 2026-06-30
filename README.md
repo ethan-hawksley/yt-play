@@ -40,7 +40,7 @@ cargo install yt-play --locked
 To install `yt-play` from source, run:
 
 ```shell
-cargo install --git https://github.com/ethan-hawksley/yt-play --locked
+cargo install --git https://github.com/ethanhawksley/yt-play --locked
 ```
 
 ### Verify Installation
