@@ -1,6 +1,6 @@
 [package]
 name = "yt-play"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "A CLI utility that synchronises YouTube playlists to local directories for offline playback."
 license = "MIT"
@@ -10,10 +10,7 @@ readme = "README.md"
 keywords = ["youtube", "playlist", "mpv", "yt-dlp", "offline"]
 categories = ["command-line-utilities", "multimedia::audio"]
 
-exclude = [
-    ".idea/*",
-    "bacon.toml",
-]
+exclude = [".idea/*", "bacon.toml"]
 
 [dependencies]
 clap = { version = "4.5.53", features = ["derive"] }
